@@ -145,7 +145,7 @@ class Agent:
         profile = self.store.load_profile(session_id)
         result = rules.diagnose_note(title, body, niche, keywords,
                                      self.patterns, self.risks, self.tags_db,
-                                     self.c_patterns)
+                                     self.c_patterns, self.times)
         note = {"id": f"n{len(profile['notes']) + 1}", "title": title,
                 "score": result["total"], "dims": result["dims"],
                 "niche": niche, "keywords": list(keywords)}

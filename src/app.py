@@ -29,6 +29,10 @@ HTML_PAGE = """<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8">
 body{font-family:sans-serif;max-width:860px;margin:0 auto;padding:16px;color:#222}
 h1{font-size:20px}h1 small{color:#888;font-weight:400}
 h2{font-size:16px;margin-top:28px}
+h3{font-size:15px;margin:14px 0 6px}
+.score{font-size:22px;font-weight:700}
+.score.good{color:#16a34a}.score.mid{color:#d97706}.score.bad{color:#dc2626}
+.dim{font-weight:700}
 #log{border:1px solid #ddd;border-radius:8px;padding:12px;min-height:180px;white-space:pre-wrap}
 #log .u{color:#0366d6}#log .a{color:#222}
 input,textarea,select{width:100%;box-sizing:border-box;padding:8px;margin:4px 0;border:1px solid #ccc;border-radius:6px}
@@ -49,7 +53,7 @@ pre{background:#f6f6f6;padding:10px;border-radius:6px;white-space:pre-wrap;word-
 <textarea id="d-body" placeholder="正文（标签写在正文里，如 #减脂餐）"></textarea>
 <div class="row"><select id="d-niche"></select><input id="d-kw" placeholder="关键词，逗号分隔"></div>
 <button id="d-go">诊断</button>
-<pre id="d-out"></pre>
+<div id="d-out"></div>
 <h2>画像与任务</h2>
 <button id="p-load">刷新画像</button>
 <pre id="p-out"></pre>
@@ -80,14 +84,27 @@ $("d-go").onclick = async () => {
   const d = await post("/api/diagnose", {session_id: sid, title: $("d-title").value, body: $("d-body").value,
     niche: $("d-niche").value, keywords: $("d-kw").value.split(/[,，、 ]+/).filter(Boolean)});
   if(d.error){ $("d-out").textContent = d.error; return; }
-  const cDim = d.dims["C语言准确性"] !== undefined ? ` · C语言准确性 ${d.dims["C语言准确性"]}/10` : "";
-  const lines = [`综合评分：${d.total} / ${d.max_score || 100} ${d.verdict}`, "",
-    `标题吸引力 ${d.dims["标题吸引力"]}/30 · 正文质量 ${d.dims["正文质量"]}/25 · 标签曝光 ${d.dims["标签曝光"]}/15 · 合规安全 ${d.dims["合规安全"]}/20${cDim}`, ""];
-  for(const k of ["标题","正文","标签","合规"]) lines.push("【" + k + "】", ...d.notes[k], "");
-  if(d.notes["C语言准确性"]) lines.push("【C语言准确性】", ...d.notes["C语言准确性"], "");
-  lines.push("【标题改写】");
-  d.rewrites.forEach(r => lines.push(`${r.name}：${r.title}（${r.tip}）`));
-  $("d-out").textContent = lines.join(NL);
+  const cls = d.total >= 80 ? "good" : d.total >= 60 ? "mid" : "bad";
+  const dimMax = {"标题吸引力": 30, "正文质量": 25, "标签曝光": 15, "合规安全": 20};
+  const dimNote = {"标题吸引力": "标题", "正文质量": "正文", "标签曝光": "标签", "合规安全": "合规"};
+  let h = `<h3>综合评分：<span class="score ${cls}">${d.total} / ${d.max_score || 100}</span> ${esc(d.verdict)}</h3><ul>`;
+  for(const dk of ["标题吸引力", "正文质量", "标签曝光", "合规安全"]){
+    h += `<li><span class="dim">${dk}：${d.dims[dk]}/${dimMax[dk]}</span><ul>${d.notes[dimNote[dk]].map(n => `<li>${esc(n)}</li>`).join("")}</ul></li>`;
+  }
+  if(d.dims["C语言准确性"] !== undefined){
+    h += `<li><span class="dim">C语言准确性：${d.dims["C语言准确性"]}/10</span><ul>${d.notes["C语言准确性"].map(n => `<li>${esc(n)}</li>`).join("")}</ul></li>`;
+  }
+  h += "</ul>";
+  h += "<h3>标题改写建议</h3><ul>" + d.rewrites.map(w =>
+    `<li><b>${esc(w.name)}：</b>${esc(w.title)}${w.missing && w.missing.length ? `（缺：${esc(w.missing.join("、"))}，补上对应关键词）` : ""}<br><span class="note">${esc(w.tip)} 例：${esc(w.example)}</span></li>`).join("") + "</ul>";
+  if(d.times){
+    h += "<h3>发布时间建议</h3><ul>"
+      + d.times.general.map(t => `<li>${esc(t.time)}：${esc(t.note)}</li>`).join("")
+      + d.times.weekend.map(t => `<li>${esc(t.time)}：${esc(t.note)}</li>`).join("")
+      + `<li>${esc(d.times.tip)}</li></ul>`;
+  }
+  h += '<p class="note">风险词库是示例版，命中请人工复核。</p>';
+  $("d-out").innerHTML = h;
 };
 $("p-load").onclick = async () => {
   const d = await fetch("/api/profile?session_id=" + sid).then(r => r.json());

@@ -311,11 +311,14 @@ def diagnose_cover(cover_path):
     return notes
 
 
-def diagnose_note(title, body, niche, keywords, patterns=None, risks=None, tags_db=None, c_patterns=None):
+def diagnose_note(title, body, niche, keywords, patterns=None, risks=None, tags_db=None, c_patterns=None, times=None):
     """一篇笔记的完整诊断。通用四维 + C 语言准确性（第 5 维，仅 C 领域计入）。
-    含 C 硬错误时总分封顶 59。返回结构化结果（供 Agent 与测试共用）。"""
+    含 C 硬错误时总分封顶 59。返回结构化结果（供 Agent 与测试共用）。
+    times 为发布时间建议（data/post_times.yaml），不传时随规则库一起加载。"""
     if patterns is None or risks is None or tags_db is None:
-        patterns, c_patterns, risks, tags_db, _ = load_data()
+        patterns, c_patterns, risks, tags_db, loaded_times = load_data()
+        if times is None:
+            times = loaded_times
     s1, n1 = diagnose_title(title, patterns)
     s2, n2 = diagnose_body(body)
     s3, n3, found = diagnose_tags(body, niche, tags_db)
@@ -341,6 +344,7 @@ def diagnose_note(title, body, niche, keywords, patterns=None, risks=None, tags_
         "rewrites": [{"name": n, "title": t, "missing": m, "tip": tip, "example": ex}
                      for n, t, m, tip, ex in rewrites],
         "tags_found": found,
+        "times": times,
         "verdict": ("🟢 优秀，直接发" if total >= 80 else
                     "🟡 可发，建议按下面优化" if total >= 60 else "🔴 先改再发"),
     }

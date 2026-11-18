@@ -3,3 +3,4 @@ __pycache__/
 data/sessions/
 data/profiles/
 .pytest_cache/
+.venv/

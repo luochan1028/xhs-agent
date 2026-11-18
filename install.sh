@@ -1,10 +1,12 @@
-# AI生成
 #!/usr/bin/env bash
+# AI生成（后合并：增加测试自检，修正启动命令）
 # 小红书内容运营智能体 xhs-agent - 一键安装脚本（Linux / macOS）
 # 用法：
 #   bash install.sh                 # 安装必需依赖并自检
 #   bash install.sh --with-cover    # 额外安装 Pillow（启用封面尺寸检查）
-# 说明：仅安装依赖并自检，不启动服务；启动用 PORT=8081 python run.py
+# 说明：创建虚拟环境 .venv，安装依赖、跑通 12 项测试；不启动服务。
+# 启动用 .venv/bin/python run.py（脚本退出后 venv 不会留在当前 shell 里，
+# 所以不要直接用 python run.py，那样会用系统 Python，找不到 PyYAML）。
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -20,7 +22,7 @@ if ! "$PY" -c 'import sys; sys.exit(0 if sys.version_info[:2] >= (3, 7) else 1)'
   exit 1
 fi
 
-echo "[1/4] 创建虚拟环境 .venv"
+echo "[1/5] 创建虚拟环境 .venv"
 if [ -d .venv ]; then
   echo "      已存在 .venv，跳过创建"
 else
@@ -30,18 +32,18 @@ fi
 # shellcheck disable=SC1091
 . .venv/bin/activate
 
-echo "[2/4] 安装必需依赖（requirements.txt）"
+echo "[2/5] 安装必需依赖（requirements.txt）"
 python -m pip install -U pip -q
 pip install -r requirements.txt -q
 
 if [ "${1:-}" = "--with-cover" ]; then
-  echo "[3/4] 安装可选依赖 Pillow（封面尺寸检查）"
+  echo "[3/5] 安装可选依赖 Pillow（封面尺寸检查）"
   pip install pillow -q
 else
-  echo "[3/4] 跳过 Pillow（封面检查会自动降级，不影响其他功能）"
+  echo "[3/5] 跳过 Pillow（封面检查会自动降级，不影响其他功能）"
 fi
 
-echo "[4/4] 自检"
+echo "[4/5] 自检"
 python - <<'PYEOF'
 import sys
 import yaml
@@ -54,7 +56,11 @@ except ImportError:
     print("      Pillow : 未安装（封面检查已禁用）")
 PYEOF
 
+echo "[5/5] 跑测试（13 项）"
+python -m unittest discover -s tests
+
 echo ""
 echo "安装完成。启动命令："
-echo "  PORT=8081 python run.py"
+echo "  .venv/bin/python run.py"
+echo "（或先 source .venv/bin/activate，再 python run.py）"
 echo "然后浏览器打开：http://localhost:8081"
