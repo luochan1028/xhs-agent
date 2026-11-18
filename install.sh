@@ -4,7 +4,7 @@
 # 用法：
 #   bash install.sh                 # 安装必需依赖并自检
 #   bash install.sh --with-cover    # 额外安装 Pillow（启用封面尺寸检查）
-# 说明：创建虚拟环境 .venv，安装依赖、跑通 12 项测试；不启动服务。
+# 说明：创建虚拟环境 .venv，安装依赖、跑通 13 项测试；不启动服务。
 # 启动用 .venv/bin/python run.py（脚本退出后 venv 不会留在当前 shell 里，
 # 所以不要直接用 python run.py，那样会用系统 Python，找不到 PyYAML）。
 set -euo pipefail
