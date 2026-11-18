@@ -18,11 +18,14 @@
 ## 2. 一键安装与运行
 
 ```bash
-./install.sh        # 检查 Python、装 PyYAML、跑 12 项测试
-python3 run.py      # 浏览器打开 http://localhost:8081
+./install.sh            # 建 .venv、装 PyYAML、跑 13 项测试（--with-cover 再装 Pillow）
+.venv/bin/python run.py # 浏览器打开 http://localhost:8081
 ```
 
-`install.sh` 只做三件事：检查 Python ≥ 3.7、装 PyYAML、跑通 12 项测试。
+`install.sh` 做五件事：检查 Python ≥ 3.7、创建虚拟环境 `.venv`、装 PyYAML、
+可选装 Pillow（`--with-cover`，启用封面尺寸检查）、跑通 13 项测试。
+Windows 用 `install.ps1`（同样流程）。注意：脚本退出后 venv 不会留在当前 shell 里，
+启动要用 `.venv/bin/python run.py`（或先 `source .venv/bin/activate` 再 `python run.py`）。
 不跑脚本时手动安装也一样：
 
 ```bash
@@ -118,7 +121,8 @@ python3 -m unittest discover -s tests -v
 ```
 xhs-agent/
   run.py            入口（默认 0.0.0.0:8081，PORT 环境变量可改）
-  install.sh        一键安装脚本
+  install.sh        一键安装脚本（Linux / macOS，建 .venv + 跑测试）
+  install.ps1       一键安装脚本（Windows PowerShell，同样流程）
   requirements.txt  仅 pyyaml
   LICENSE           MIT License
   data/             规则库（与 Skill 版同源）+ 样例笔记 + 运行期画像/会话（JSON）
